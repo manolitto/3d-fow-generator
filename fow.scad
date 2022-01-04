@@ -1,14 +1,8 @@
 
-/*[ Room Dimensions and Wall Taxonomy ]*/
+/*[ Basic Settings: Room Dimensions and Wall Taxonomy ]*/
 
 // Number of floor fields (width and length) 
-room_size = [4, 2];
-
-// height of wall above floor level (in mm)
-wall_height = 40.8;
-
-// Width and Length of each floor field (default = 1x1 inch)
-single_tile_size = [25.4, 25.4];
+room_size = [3, 2];
 
 // Type of north wall
 wall_taxonomy_N = "WoT"; //[WoT:wall on tile, SepW:separate wall, None:no wall]
@@ -19,13 +13,24 @@ wall_taxonomy_S = "WoT"; //[WoT:wall on tile, SepW:separate wall, None:no wall]
 // Type of west wall
 wall_taxonomy_W = "WoT"; //[WoT:wall on tile, SepW:separate wall, None:no wall]
 
-// Thickness of walls
+/*[ Advanced Settings ]*/
+
+// height of wall above floor level (e.g. OpenForge Towne Wall with wood floor = 40.9 mm)
+wall_height = 40.9;
+
+// Width and Length of each floor field in mm (default = 1x1 inch)
+single_tile_size = [25.4, 25.4];
+
+// Thickness of walls on tiles (e.g. OpenForge Towne WoT = 10.6 mm)
 wall_on_tile_thickness = 10.6;
-separate_wall_thickness = 10.6;
+// Thickness of separate walls (e.g. OpenForge Towne Sep.W. = 13 mm)
+separate_wall_thickness = 13;
+// How much shall the wall be overlapped by the sheet (0.5 = 50%)
+wall_overlap_factor = 0.5;
 
 /*[ Support Feet Properties ]*/
 
-foot_radius = 4;
+foot_radius = 3;
 
 // Force support foot on NE corner
 force_foot_NE = false;
@@ -57,17 +62,17 @@ room_dim = [room_size.x * single_tile_size.x,
 floor_dim = [room_dim.x - (wall_taxonomy_E=="WoT"?wall_on_tile_thickness:0) - (wall_taxonomy_W=="WoT"?wall_on_tile_thickness:0),
              room_dim.y - (wall_taxonomy_N=="WoT"?wall_on_tile_thickness:0) - (wall_taxonomy_S=="WoT"?wall_on_tile_thickness:0)];
 
-sheet_edge_N = wall_taxonomy_N == "WoT" ? 0.75 * wall_on_tile_thickness :
-               wall_taxonomy_N == "SepW" ? 0.75 * separate_wall_thickness :
+sheet_edge_N = wall_taxonomy_N == "WoT" ? wall_overlap_factor * wall_on_tile_thickness :
+               wall_taxonomy_N == "SepW" ? wall_overlap_factor * separate_wall_thickness :
                0;
-sheet_edge_E = wall_taxonomy_E == "WoT" ? 0.75 * wall_on_tile_thickness :
-               wall_taxonomy_E == "SepW" ? 0.75 * separate_wall_thickness :
+sheet_edge_E = wall_taxonomy_E == "WoT" ? wall_overlap_factor * wall_on_tile_thickness :
+               wall_taxonomy_E == "SepW" ? wall_overlap_factor * separate_wall_thickness :
                0;
-sheet_edge_S = wall_taxonomy_S == "WoT" ? 0.75 * wall_on_tile_thickness :
-               wall_taxonomy_S == "SepW" ? 0.75 * separate_wall_thickness :
+sheet_edge_S = wall_taxonomy_S == "WoT" ? wall_overlap_factor * wall_on_tile_thickness :
+               wall_taxonomy_S == "SepW" ? wall_overlap_factor * separate_wall_thickness :
                0;
-sheet_edge_W = wall_taxonomy_W == "WoT" ? 0.75 * wall_on_tile_thickness :
-               wall_taxonomy_W == "SepW" ? 0.75 * separate_wall_thickness :
+sheet_edge_W = wall_taxonomy_W == "WoT" ? wall_overlap_factor * wall_on_tile_thickness :
+               wall_taxonomy_W == "SepW" ? wall_overlap_factor * separate_wall_thickness :
                0;
 
 sheet_outer_dim = [
