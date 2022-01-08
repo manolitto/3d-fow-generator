@@ -5,13 +5,13 @@
 room_size = [3, 2];
 
 // Type of north wall
-wall_taxonomy_N = "WoT"; //[WoT:wall on tile, SepW:separate wall, None:no wall]
+wall_taxonomy_N = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
 // Type of east wall
-wall_taxonomy_E = "WoT"; //[WoT:wall on tile, SepW:separate wall, None:no wall]
+wall_taxonomy_E = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
 // Type of south wall
-wall_taxonomy_S = "WoT"; //[WoT:wall on tile, SepW:separate wall, None:no wall]
+wall_taxonomy_S = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
 // Type of west wall
-wall_taxonomy_W = "WoT"; //[WoT:wall on tile, SepW:separate wall, None:no wall]
+wall_taxonomy_W = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
 
 /*[ Advanced Settings ]*/
 
@@ -30,22 +30,31 @@ wall_overlap_factor = 0.5;
 
 /*[ Support Feet Properties ]*/
 
-foot_radius = 3;
+foot_radius = 2.5;
 
+// Shall support feet be created at the corners (or rather on the edges)
+prefer_corner_feet = true;
+// Force support foot on N edge
+force_foot_N = false;
 // Force support foot on NE corner
 force_foot_NE = false;
+// Force support foot on E edge
+force_foot_E = false;
 // Force support foot on SE corner
 force_foot_SE = false;
+// Force support foot on S edge
+force_foot_S = false;
 // Force support foot on SW corner
 force_foot_SW = false;
+// Force support foot on W edge
+force_foot_W = false;
 // Force support foot on NW corner
 force_foot_NW = false;
-
 
 /*[ Frame Properties ]*/
 
 frame_width = 3;
-frame_height = 2;
+frame_height = 5;
 frame_edge = 0.5;
 
 
@@ -53,6 +62,7 @@ frame_edge = 0.5;
 
 sheet_thickness = 0.3;
 sheet_corner_radius = 3;
+text_height = 0.15;
 
 
 //
@@ -83,12 +93,17 @@ sheet_outer_dim = [
 frame_inner_dim
     = floor_dim - 2 * [frame_width, frame_width];
 
-center_offset = [(sheet_edge_W - sheet_edge_E) / 2, (sheet_edge_S - sheet_edge_N) / 2];
+center_offset = [(sheet_edge_W - sheet_edge_E) / 2, (sheet_edge_N - sheet_edge_S) / 2];
 
-draw_foot_NE = force_foot_NE || wall_taxonomy_N == "None" && wall_taxonomy_E == "None";
-draw_foot_SE = force_foot_SE || wall_taxonomy_S == "None" && wall_taxonomy_E == "None";
-draw_foot_SW = force_foot_SW || wall_taxonomy_S == "None" && wall_taxonomy_W == "None";
-draw_foot_NW = force_foot_NW || wall_taxonomy_N == "None" && wall_taxonomy_W == "None";
+draw_foot_NE = force_foot_NE || prefer_corner_feet && wall_taxonomy_N == "Facade" && wall_taxonomy_E == "Facade";
+draw_foot_SE = force_foot_SE || prefer_corner_feet && wall_taxonomy_S == "Facade" && wall_taxonomy_E == "Facade";
+draw_foot_SW = force_foot_SW || prefer_corner_feet && wall_taxonomy_S == "Facade" && wall_taxonomy_W == "Facade";
+draw_foot_NW = force_foot_NW || prefer_corner_feet && wall_taxonomy_N == "Facade" && wall_taxonomy_W == "Facade";
+
+draw_foot_N = force_foot_N || !prefer_corner_feet && wall_taxonomy_N == "Facade" && (wall_taxonomy_E == "Facade" || wall_taxonomy_W == "Facade");
+draw_foot_E = force_foot_E || !prefer_corner_feet && wall_taxonomy_E == "Facade" && (wall_taxonomy_N == "Facade" || wall_taxonomy_S == "Facade");
+draw_foot_S = force_foot_S || !prefer_corner_feet && wall_taxonomy_S == "Facade" && (wall_taxonomy_E == "Facade" || wall_taxonomy_W == "Facade");
+draw_foot_W = force_foot_W || !prefer_corner_feet && wall_taxonomy_W == "Facade" && (wall_taxonomy_N == "Facade" || wall_taxonomy_S == "Facade");
 
 echo(room_dim=room_dim);
 echo(floor_dim=floor_dim);
@@ -99,8 +114,8 @@ module frame2d() {
     polygon(points=[
         [0, 0],
         [frame_width, 0],
-        [frame_edge, frame_height],
-        [0, frame_height]
+        [frame_edge, frame_height + 0.01],
+        [0, frame_height + 0.01]
     ]);
 }
 
@@ -165,6 +180,7 @@ module framePartSE() {
 }
 
 module frame() {
+    rotate([180,0,0]) // turn upside down
     union() {
         framePartN();
         framePartS();
@@ -176,9 +192,6 @@ module frame() {
         framePartNW();
     }
 }
-
-
-
 
 module sheet() {
     linear_extrude(sheet_thickness)
@@ -194,67 +207,82 @@ module sheet() {
     };
 }
 
-module frame() {
-    translate([center_offset.x, center_offset.y, sheet_thickness])
-    rotate([180,0,0])    
-    union() {
-        framePartN();
-        framePartS();
-        framePartE();
-        framePartW();
-        framePartSE();
-        framePartNE();
-        framePartSW();
-        framePartNW();
-    }
-}
-
 module labels() {
     text_size = min(20, frame_inner_dim.x/3.2, frame_inner_dim.y/3); //room_size.x > 2 && room_size.y > 1 ? 20 : 12;
-
     echo(text_size=text_size);
 
     translate([center_offset.x, center_offset.y, 0])
-    linear_extrude(height=0.15)
+    linear_extrude(height=text_height + 0.01)
     union() {
         text(str(room_size.x, "  ", room_size.y), font = "Liberation Sans", size = text_size, valign = "center", halign="center");
         text("x", font = "Liberation Sans", size = text_size, valign = "center", halign="center");
     }
 
-    text_N = wall_taxonomy_N == "WoT" ? "↑wall on tile↑" :
-             wall_taxonomy_N == "SepW" ? "↑sep. wall↑" :
-             "↑no wall↑";
-    text_E = wall_taxonomy_E == "WoT" ? "↑wall on tile↑" :
-             wall_taxonomy_E == "SepW" ? "↑sep. wall↑" :
-             "↑no wall↑";
-    text_S = wall_taxonomy_S == "WoT" ? "↓wall on tile↓" :
-             wall_taxonomy_S == "SepW" ? "↓sep. wall↓" :
-             "↓no wall↓";
-    text_W = wall_taxonomy_W == "WoT" ? "↓wall on tile↓" :
-             wall_taxonomy_W == "SepW" ? "↓sep. wall↓" :
-             "↓no wall↓";
+    text_N = wall_taxonomy_N == "WoT" ? "wall on tile" :
+             wall_taxonomy_N == "SepW" ? "sep. wall" :
+             "facade";
+    text_E = wall_taxonomy_E == "WoT" ? "wall on tile" :
+             wall_taxonomy_E == "SepW" ? "sep. wall" :
+             "facade";
+    text_S = wall_taxonomy_S == "WoT" ? "wall on tile" :
+             wall_taxonomy_S == "SepW" ? "sep. wall" :
+             "facade";
+    text_W = wall_taxonomy_W == "WoT" ? "wall on tile" :
+             wall_taxonomy_W == "SepW" ? "sep. wall" :
+             "facade";
 
     wall_text_size = text_size / 3;
 
-    translate([center_offset.x, center_offset.y + frame_inner_dim.y / 2 - 1, 0])
-    linear_extrude(height=0.15)
-        text(text_N, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "top");
+    translate([center_offset.x, center_offset.y - frame_inner_dim.y / 2 + 1, 0])
+    linear_extrude(height=text_height + 0.01)
+        text(text_N, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "bottom");
 
     translate([center_offset.x + frame_inner_dim.x / 2 - 1, center_offset.y, 0])
     rotate([0,0,-90])
-    linear_extrude(height=0.15)
+    linear_extrude(height=text_height + 0.01)
         text(text_E, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "top");
 
-    translate([center_offset.x, center_offset.y - frame_inner_dim.y / 2 + 1, 0])
-    linear_extrude(height=0.15)
-        text(text_S, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "bottom");
+    translate([center_offset.x, center_offset.y + frame_inner_dim.y / 2 - 1, 0])
+    linear_extrude(height=text_height + 0.01)
+        text(text_S, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "top");
 
     translate([center_offset.x - frame_inner_dim.x / 2 + 1, center_offset.y, 0])
     rotate([0,0,-90])
-    linear_extrude(height=0.15)
+    linear_extrude(height=text_height + 0.01)
         text(text_W, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "bottom");
 
 }
+
+module sheetWithFrame() {
+    union() {
+
+        if (frame_inner_dim.x > 15 && frame_inner_dim.y > 15) {
+            difference() {
+                sheet();
+                translate([0, 0, sheet_thickness - text_height])
+                    labels();
+            }
+        } else {
+            sheet();
+        }
+
+        translate([center_offset.x, center_offset.y, sheet_thickness - 0.01])
+            frame();
+    }
+
+}
+
+module notch() {
+    //cube(size = [10,10,10], center = true);
+}
+
+module cover() {
+    difference() {
+        sheetWithFrame();
+        notch();
+    }
+}
+
 
 module foot() {
     union() {
@@ -268,42 +296,59 @@ module foot() {
 }
 
 module feet() {
-    translate([center_offset.x, center_offset.y, sheet_thickness])
+    shift = max(foot_radius, sheet_corner_radius);
     union() {
+        if (draw_foot_N) {
+            translate([ 0,
+                       -floor_dim.y/2 + shift,
+                        0]) foot();
+        }
         if (draw_foot_NE) {
-            translate([floor_dim.x/2 - foot_radius,
-                    floor_dim.y/2 - foot_radius,
-                    0]) foot();
+            translate([ floor_dim.x/2 - shift,
+                       -floor_dim.y/2 + shift,
+                        0]) foot();
+        }
+        if (draw_foot_E) {
+            translate([ floor_dim.x/2 - shift,
+                        0,
+                        0]) foot();
         }
         if (draw_foot_SE) {
-            translate([floor_dim.x/2 - foot_radius,
-                    -floor_dim.y/2 + foot_radius,
-                    0]) foot();
+            translate([ floor_dim.x/2 - shift,
+                        floor_dim.y/2 - shift,
+                        0]) foot();
+        }
+        if (draw_foot_S) {
+            translate([ 0,
+                        floor_dim.y/2 - shift,
+                        0]) foot();
         }
         if (draw_foot_SW) {
-            translate([-floor_dim.x/2 + foot_radius,
-                    -floor_dim.y/2 + foot_radius,
-                    0]) foot();
+            translate([-floor_dim.x/2 + shift,
+                        floor_dim.y/2 - shift,
+                        0]) foot();
+        }
+        if (draw_foot_W) {
+            translate([-floor_dim.x/2 + shift,
+                        0,
+                        0]) foot();
         }
         if (draw_foot_NW) {
-            translate([-floor_dim.x/2 + foot_radius,
-                    floor_dim.y/2 - foot_radius,
-                    0]) foot();
+            translate([-floor_dim.x/2 + shift,
+                       -floor_dim.y/2 + shift,
+                        0]) foot();
         }
     }
 }
 
 module fow() {
-    difference() {
-        union() {
-            sheet();
-            frame();
+    union() {
+
+        cover();
+        
+        translate([center_offset.x, center_offset.y, sheet_thickness - 0.01])
             feet();
-        };
-        if (room_size.x > 1 && room_size.y > 1) {
-            translate([0,0,sheet_thickness-0.15+0.01])
-            labels();
-        }
+
     }
 }
 
