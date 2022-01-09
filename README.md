@@ -7,7 +7,7 @@ Fog of War room cover generator for RPG 3D scenarios
 - For every side of the room you can select **different wall options**:
  
 	- **Wall on Tile**: this type of wall is part of and overlaps the floor grid of the room (Floor and wall are typically printed as one or glued together).
-	- **Separate Wall**: the wall is outside the floor grid (Typically the wall is a separate part which is attached to the side of the floor part)
+	- **Separate** or **Exterior Wall**: the wall is outside the room's floor grid (Typically the wall is a separate part which is attached to the side of the floor part or it is the backside of another room's Wall on Tile)
 	- **Facade**: this type of wall is higher than the rest of the inside walls and typically used as the ouside facade of buildings
 	- **No wall**: the room is open on this side. Convenient for corridors if you want to have multiple FoW covers stringed together.
 

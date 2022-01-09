@@ -5,13 +5,13 @@
 room_size = [3, 2];
 
 // Type of north wall
-wall_taxonomy_N = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
+wall_taxonomy_N = "WoT"; //[WoT:Wall on Tile, SepW:Separate / Exterior Wall, Facade:Facade / No Wall]
 // Type of east wall
-wall_taxonomy_E = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
+wall_taxonomy_E = "WoT"; //[WoT:Wall on Tile, SepW:Separate / Exterior Wall, Facade:Facade / No Wall]
 // Type of south wall
-wall_taxonomy_S = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
+wall_taxonomy_S = "WoT"; //[WoT:Wall on Tile, SepW:Separate / Exterior Wall, Facade:Facade / No Wall]
 // Type of west wall
-wall_taxonomy_W = "WoT"; //[WoT:Wall on Tile, SepW:Separate Wall, Facade:Facade / No Wall]
+wall_taxonomy_W = "WoT"; //[WoT:Wall on Tile, SepW:Separate / Exterior Wall, Facade:Facade / No Wall]
 
 /*[ Advanced Settings ]*/
 
@@ -23,8 +23,8 @@ single_tile_size = [25.4, 25.4];
 
 // Thickness of walls on tiles (e.g. OpenForge Towne WoT = 10.6 mm)
 wall_on_tile_thickness = 10.6;
-// Thickness of separate walls (e.g. OpenForge Towne Sep.W. = 13 mm)
-separate_wall_thickness = 13;
+// Thickness of separate walls (e.g. OpenForge Towne Sep.W. = 13 mm, Exterior WoT = 10.6 mm)
+separate_wall_thickness = 10.6;
 // How much shall the wall be overlapped by the sheet (0.5 = 50%)
 wall_overlap_factor = 0.5;
 
@@ -63,9 +63,14 @@ frame_edge = 0.5;
 sheet_thickness = 0.3;
 sheet_corner_radius = 3;
 text_height = 0.15;
-
+wall_labels_enabled = true;
+size_label_enabled=true;
+grid_enabled = true;
+grid_strength = 0.5;
 
 //
+
+OVERLAP = 0.01;
 
 room_dim = [room_size.x * single_tile_size.x,
             room_size.y * single_tile_size.y];
@@ -114,8 +119,8 @@ module frame2d() {
     polygon(points=[
         [0, 0],
         [frame_width, 0],
-        [frame_edge, frame_height + 0.01],
-        [0, frame_height + 0.01]
+        [frame_edge, frame_height + OVERLAP],
+        [0, frame_height + OVERLAP]
     ]);
 }
 
@@ -209,48 +214,81 @@ module sheet() {
 
 module labels() {
     text_size = min(20, frame_inner_dim.x/3.2, frame_inner_dim.y/3); //room_size.x > 2 && room_size.y > 1 ? 20 : 12;
-    echo(text_size=text_size);
+    //echo(text_size=text_size);
 
-    translate([center_offset.x, center_offset.y, 0])
-    linear_extrude(height=text_height + 0.01)
-    union() {
-        text(str(room_size.x, "  ", room_size.y), font = "Liberation Sans", size = text_size, valign = "center", halign="center");
-        text("x", font = "Liberation Sans", size = text_size, valign = "center", halign="center");
+    if (size_label_enabled) {
+        translate([center_offset.x, center_offset.y, 0])
+        linear_extrude(height=text_height + OVERLAP)
+        union() {
+            text(str(room_size.x, "  ", room_size.y), font = "Liberation Sans", size = text_size, valign = "center", halign="center");
+            text("x", font = "Liberation Sans", size = text_size, valign = "center", halign="center");
+        }
     }
 
-    text_N = wall_taxonomy_N == "WoT" ? "wall on tile" :
-             wall_taxonomy_N == "SepW" ? "sep. wall" :
-             "facade";
-    text_E = wall_taxonomy_E == "WoT" ? "wall on tile" :
-             wall_taxonomy_E == "SepW" ? "sep. wall" :
-             "facade";
-    text_S = wall_taxonomy_S == "WoT" ? "wall on tile" :
-             wall_taxonomy_S == "SepW" ? "sep. wall" :
-             "facade";
-    text_W = wall_taxonomy_W == "WoT" ? "wall on tile" :
-             wall_taxonomy_W == "SepW" ? "sep. wall" :
-             "facade";
+    if (wall_labels_enabled) {
 
-    wall_text_size = text_size / 3;
+        text_N = wall_taxonomy_N == "WoT" ? "wall on tile" :
+                wall_taxonomy_N == "SepW" ? "sep. wall" :
+                "facade";
+        text_E = wall_taxonomy_E == "WoT" ? "wall on tile" :
+                wall_taxonomy_E == "SepW" ? "sep. wall" :
+                "facade";
+        text_S = wall_taxonomy_S == "WoT" ? "wall on tile" :
+                wall_taxonomy_S == "SepW" ? "sep. wall" :
+                "facade";
+        text_W = wall_taxonomy_W == "WoT" ? "wall on tile" :
+                wall_taxonomy_W == "SepW" ? "sep. wall" :
+                "facade";
 
-    translate([center_offset.x, center_offset.y - frame_inner_dim.y / 2 + 1, 0])
-    linear_extrude(height=text_height + 0.01)
-        text(text_N, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "bottom");
+        wall_text_size = text_size / 3;
 
-    translate([center_offset.x + frame_inner_dim.x / 2 - 1, center_offset.y, 0])
-    rotate([0,0,-90])
-    linear_extrude(height=text_height + 0.01)
-        text(text_E, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "top");
+        translate([center_offset.x, center_offset.y - frame_inner_dim.y / 2 + 1, 0])
+        linear_extrude(height=text_height + OVERLAP)
+            text(text_N, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "bottom");
 
-    translate([center_offset.x, center_offset.y + frame_inner_dim.y / 2 - 1, 0])
-    linear_extrude(height=text_height + 0.01)
-        text(text_S, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "top");
+        translate([center_offset.x + frame_inner_dim.x / 2 - 1, center_offset.y, 0])
+        rotate([0,0,-90])
+        linear_extrude(height=text_height + OVERLAP)
+            text(text_E, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "top");
 
-    translate([center_offset.x - frame_inner_dim.x / 2 + 1, center_offset.y, 0])
-    rotate([0,0,-90])
-    linear_extrude(height=text_height + 0.01)
-        text(text_W, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "bottom");
+        translate([center_offset.x, center_offset.y + frame_inner_dim.y / 2 - 1, 0])
+        linear_extrude(height=text_height + OVERLAP)
+            text(text_S, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "top");
 
+        translate([center_offset.x - frame_inner_dim.x / 2 + 1, center_offset.y, 0])
+        rotate([0,0,-90])
+        linear_extrude(height=text_height + OVERLAP)
+            text(text_W, font = "Liberation Sans", size = wall_text_size, halign="center", valign = "bottom");
+
+    }
+
+}
+
+module grid() {
+    translate([wall_taxonomy_W=="WoT"?-wall_on_tile_thickness:0,0,0]) {
+        for (x = [1:1:room_size.x-1]) {
+            translate([-floor_dim.x/2 + x*single_tile_size.x - grid_strength/2, -frame_inner_dim.y/2, sheet_thickness - text_height])
+            cube([grid_strength, frame_inner_dim.y, text_height + OVERLAP], center=false);
+        };
+    }
+    translate([0,wall_taxonomy_N=="WoT"?-wall_on_tile_thickness:0,0]) {
+        for (y = [1:1:room_size.y-1]) {
+            translate([-frame_inner_dim.x/2, -floor_dim.y/2 + y*single_tile_size.y - grid_strength/2, sheet_thickness - text_height])
+            cube([frame_inner_dim.x, grid_strength, text_height + OVERLAP], center=false);
+        }
+    }
+}
+
+module sheetWithGrid() {
+    if (grid_enabled) {
+        difference() {
+            sheet();
+            translate([center_offset.x, center_offset.y, 0])
+                grid();
+        }
+    } else {
+        sheet();
+    }
 }
 
 module sheetWithFrame() {
@@ -258,29 +296,22 @@ module sheetWithFrame() {
 
         if (frame_inner_dim.x > 15 && frame_inner_dim.y > 15) {
             difference() {
-                sheet();
+                sheetWithGrid();
                 translate([0, 0, sheet_thickness - text_height])
                     labels();
             }
         } else {
-            sheet();
+            sheetWithGrid();
         }
 
-        translate([center_offset.x, center_offset.y, sheet_thickness - 0.01])
+        translate([center_offset.x, center_offset.y, sheet_thickness - OVERLAP])
             frame();
     }
 
 }
 
-module notch() {
-    //cube(size = [10,10,10], center = true);
-}
-
 module cover() {
-    difference() {
-        sheetWithFrame();
-        notch();
-    }
+    sheetWithFrame();
 }
 
 
@@ -346,11 +377,10 @@ module fow() {
 
         cover();
         
-        translate([center_offset.x, center_offset.y, sheet_thickness - 0.01])
+        translate([center_offset.x, center_offset.y, sheet_thickness - OVERLAP])
             feet();
 
     }
 }
 
 fow();
-
